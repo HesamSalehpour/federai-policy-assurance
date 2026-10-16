@@ -1,0 +1,32 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+      MODEL_BASE_URL: ${MODEL_BASE_URL:-https://api.publicai.co/v1}
+      MODEL_NAME: ${MODEL_NAME:-swiss-ai/apertus-v1.5-8b}
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_FEDERAI_API_URL: /
+    environment:
+      PORT: "3000"
+      HOST: 0.0.0.0
+    restart: unless-stopped
+
+  proxy:
+    image: nginx:alpine
+    ports:
+      - "8000:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api
+      - web
+    restart: unless-stopped
